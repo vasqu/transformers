@@ -217,9 +217,7 @@ class Mamba2Config(PretrainedConfig):
         self.mamba2_num_heads = self.intermediate_size // self.mamba2_head_dim
         self.attention_head_dim = attention_head_dim
         self.num_attention_heads = num_attention_heads
-        self.num_key_value_heads = (
-            num_key_value_heads if num_key_value_heads is not None else num_attention_heads
-        )
+        self.num_key_value_heads = num_key_value_heads if num_key_value_heads is not None else num_attention_heads
         self.num_hidden_layers = num_hidden_layers
         self.attention_layers_idx = attention_layers_idx
         self._attention_layers_idx_validation()

@@ -441,18 +441,6 @@ class Mamba2ModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMix
             # TODO: this is quite large, what is causing this? My hw?
             self.assertTrue(torch.allclose(next_logits_wo_padding, next_logits_with_padding, atol=3e-1))
 
-    @unittest.skip(reason="Mamba2 does not have a legacy cache equivalent")
-    def test_beam_search_generate_dict_outputs_use_cache(self):
-        pass
-
-    @unittest.skip(reason="Mamba2 does not have a legacy cache equivalent")
-    def test_generate_continue_from_past_key_values(self):
-        pass
-
-    @unittest.skip(reason="Mamba2 does not have a legacy cache equivalent")
-    def test_greedy_generate_dict_outputs_use_cache(self):
-        pass
-
     @unittest.skip(reason="Mamba2 has its own special cache type")
     @parameterized.expand([(1, False), (1, True), (4, False)])
     def test_new_cache_format(self, num_beams, do_sample):
