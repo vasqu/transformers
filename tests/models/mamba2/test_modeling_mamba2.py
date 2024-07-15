@@ -16,6 +16,7 @@
 
 import math
 import unittest
+from typing import List, Tuple, Dict
 
 from parameterized import parameterized
 
@@ -39,6 +40,7 @@ if is_torch_available():
         Mamba2ForCausalLM,
         Mamba2Model,
     )
+    from transformers.models.mamba2.modeling_mamba2 import HybridMamba2AttentionDynamicCache
 
 
 class Mamba2ModelTester:
@@ -441,9 +443,68 @@ class Mamba2ModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMix
             # TODO: this is quite large, what is causing this? My hw?
             self.assertTrue(torch.allclose(next_logits_wo_padding, next_logits_with_padding, atol=3e-1))
 
+    def test_model_outputs_equivalence(self):
+        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+
+        def check_equivalence(model, tuple_inputs, dict_inputs, additional_kwargs={}):
+            with torch.no_grad():
+                tuple_output = model(**tuple_inputs, return_dict=False, **additional_kwargs)
+                dict_output = model(**dict_inputs, return_dict=True, **additional_kwargs).to_tuple()
+
+                def recursive_check(tuple_object, dict_object):
+                    if isinstance(tuple_object, HybridMamba2AttentionDynamicCache):  # MODIFIED PART START
+                        recursive_check(tuple_object.conv_states, dict_object.conv_states)
+                        recursive_check(tuple_object.ssm_states, dict_object.ssm_states)
+                        recursive_check(tuple_object.key_cache, dict_object.key_cache)
+                        recursive_check(tuple_object.value_cache, dict_object.value_cache)
+                    elif isinstance(tuple_object, (List, Tuple)):  # MODIFIED PART END
+                        for tuple_iterable_value, dict_iterable_value in zip(tuple_object, dict_object):
+                            recursive_check(tuple_iterable_value, dict_iterable_value)
+                    elif isinstance(tuple_object, Dict):
+                        for tuple_iterable_value, dict_iterable_value in zip(
+                                tuple_object.values(), dict_object.values()
+                        ):
+                            recursive_check(tuple_iterable_value, dict_iterable_value)
+                    elif tuple_object is None:
+                        return
+                    else:
+                        self.assertTrue(
+                            torch.allclose(tuple_object, dict_object, atol=1e-5),
+                        )
+
+                recursive_check(tuple_output, dict_output)
+
+        for model_class in self.all_model_classes:
+            model = model_class(config)
+            model.to(torch_device)
+            model.eval()
+
+            tuple_inputs = self._prepare_for_class(inputs_dict, model_class)
+            dict_inputs = self._prepare_for_class(inputs_dict, model_class)
+            check_equivalence(model, tuple_inputs, dict_inputs)
+
+            tuple_inputs = self._prepare_for_class(inputs_dict, model_class, return_labels=True)
+            dict_inputs = self._prepare_for_class(inputs_dict, model_class, return_labels=True)
+            check_equivalence(model, tuple_inputs, dict_inputs)
+
+            tuple_inputs = self._prepare_for_class(inputs_dict, model_class)
+            dict_inputs = self._prepare_for_class(inputs_dict, model_class)
+            check_equivalence(model, tuple_inputs, dict_inputs, {"output_hidden_states": True})
+
+            tuple_inputs = self._prepare_for_class(inputs_dict, model_class, return_labels=True)
+            dict_inputs = self._prepare_for_class(inputs_dict, model_class, return_labels=True)
+            check_equivalence(model, tuple_inputs, dict_inputs, {"output_attentions": True})
+
     @unittest.skip(reason="Mamba2 has its own special cache type")
     @parameterized.expand([(1, False), (1, True), (4, False)])
     def test_new_cache_format(self, num_beams, do_sample):
+        pass
+
+    @unittest.skip(
+        reason="Mamba2 does not follow the standard format for head_dim and emb_dim. "
+               "Additionally, outputting attentions is different as we only handle the specific layers doing so."
+    )
+    def test_past_key_values_format(self):
         pass
 
     # TODO: check test_flash_attn_2_fp32_ln and test_flash_attn_2_generate_padding_right

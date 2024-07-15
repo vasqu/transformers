@@ -193,12 +193,9 @@ class Mamba2Config(PretrainedConfig):
         **kwargs,
     ):
         # Avoid mutable default args
-        if attention_layers_idx is None:
-            attention_layers_idx = []
-        if A_initializer_range is None:
-            A_initializer_range = [1, 16]
-        if time_step_limit is None:
-            time_step_limit = [0.0, float("inf")]
+        attention_layers_idx = [] if attention_layers_idx is None else attention_layers_idx
+        A_initializer_range = [1, 16] if A_initializer_range is None else A_initializer_range
+        time_step_limit = [0.0, float("inf")] if time_step_limit is None else time_step_limit
 
         self.vocab_size = vocab_size
         self.pad_token_id = pad_token_id
