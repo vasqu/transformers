@@ -16,7 +16,7 @@
 
 import math
 import unittest
-from typing import List, Tuple, Dict
+from typing import Dict, List, Tuple
 
 from parameterized import parameterized
 
@@ -462,7 +462,7 @@ class Mamba2ModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMix
                             recursive_check(tuple_iterable_value, dict_iterable_value)
                     elif isinstance(tuple_object, Dict):
                         for tuple_iterable_value, dict_iterable_value in zip(
-                                tuple_object.values(), dict_object.values()
+                            tuple_object.values(), dict_object.values()
                         ):
                             recursive_check(tuple_iterable_value, dict_iterable_value)
                     elif tuple_object is None:
@@ -502,7 +502,7 @@ class Mamba2ModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMix
 
     @unittest.skip(
         reason="Mamba2 does not follow the standard format for head_dim and emb_dim. "
-               "Additionally, outputting attentions is different as we only handle the specific layers doing so."
+        "Additionally, outputting attentions is different as we only handle the specific layers doing so."
     )
     def test_past_key_values_format(self):
         pass
