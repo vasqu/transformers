@@ -572,9 +572,9 @@ class Mamba2Attention(nn.Module):
 
         # Split combined hidden dims back into respective attention heads
         # [batch, seq_len, hidden_size] --> [batch, seq_len, num_heads, head_dim]
-        query = q.view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
-        key = k.view(bsz, q_len, self.num_heads_kv, self.head_dim).transpose(1, 2)
-        value = v.view(bsz, q_len, self.num_heads_kv, self.head_dim).transpose(1, 2)
+        query = q.reshape(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
+        key = k.reshape(bsz, q_len, self.num_heads_kv, self.head_dim).transpose(1, 2)
+        value = v.reshape(bsz, q_len, self.num_heads_kv, self.head_dim).transpose(1, 2)
 
         if self.rotary_emb_dim > 0:
             # TODO do we need to cache sin and cos for RoPE, llama doesn't seem to cache it (except when using sink cache)?
@@ -585,6 +585,7 @@ class Mamba2Attention(nn.Module):
             key, value = cache.update(key, value, self.layer_idx)
 
         return query, key, value
+
 
 # Adapted from transformers.models.llama.modeling_llama.LlamaFlashAttention2 with Llama->Mamba2
 class Mamba2FlashAttention2(Mamba2Attention):
@@ -756,7 +757,7 @@ class Mamba2SdpaAttention(Mamba2Attention):
 
         # Reshape outputs
         attn_output = attn_output.transpose(1, 2).contiguous()
-        attn_output = attn_output.view(bsz, q_len, -1)
+        attn_output = attn_output.reshape(bsz, q_len, -1)
 
         attn_output = self.out_proj(attn_output)
 
@@ -916,7 +917,7 @@ class Mamba2Mixer(nn.Module):
 
         if not cached_forward:
             y = mamba_chunk_scan_combined(
-                x=x.view(x.shape[0], x.shape[1], -1, self.head_dim),
+                x=x.reshape(x.shape[0], x.shape[1], -1, self.head_dim),
                 dt=dt,
                 A=A,
                 B=B.unsqueeze(-2),
@@ -938,7 +939,7 @@ class Mamba2Mixer(nn.Module):
                     cache.ssm_states[self.layer_idx].copy_(last_state)
 
             # [bsz, seq_len, num_heads, head_dim] -> [bsz, seq_len, intermediate size]
-            y = y.view(y.shape[0], y.shape[1], -1)
+            y = y.reshape(y.shape[0], y.shape[1], -1)
         else:
             # Preparing values for single step
             # [num_heads] -> [num_heads, head_dim, state_size]
@@ -955,7 +956,7 @@ class Mamba2Mixer(nn.Module):
             # [num_heads] -> [num_heads, head_dim]
             D = self.D.unsqueeze(-1).expand(self.D.shape[0], self.head_dim)
             # [bsz, intermediate_size] -> [bsz, num_heads, head_dim]
-            x_reshaped = x.view(x.shape[0], -1, self.head_dim)
+            x_reshaped = x.reshape(x.shape[0], -1, self.head_dim)
 
             # Triton kernel for updating states in-place and returning the hidden state
             y = selective_state_update(
@@ -972,7 +973,7 @@ class Mamba2Mixer(nn.Module):
             )
 
             # [bsz, num_heads, head_dim] -> [bsz, 1, intermediate_size]
-            y = y.view(y.shape[0], -1).unsqueeze(1)
+            y = y.reshape(y.shape[0], -1).unsqueeze(1)
 
         # 4. Gate normalization introduced for instability, see section 7 of the paper
         y = self.norm(y, residual=z)
@@ -1026,11 +1027,11 @@ class Mamba2Mixer(nn.Module):
             if len(x.shape) == 3:
                 # b (l c) h -> b l c h with c=chunk_size
                 # [bsz, seq_len multiple of chunk_size, num_heads] -> [bsz, -1, chunk_size, num_heads]
-                return x.view(x.shape[0], -1, chunk_size, x.shape[2])
+                return x.reshape(x.shape[0], -1, chunk_size, x.shape[2])
             else:
                 # b (l c) h p -> b l c h p with c=chunk_size
                 # [bsz, seq_len multiple of chunk_size, num_heads, head_dim or state_size] -> [bsz, -1, chunk_size, num_heads, head_dim or state_size]
-                return x.view(x.shape[0], -1, chunk_size, x.shape[2], x.shape[3])
+                return x.reshape(x.shape[0], -1, chunk_size, x.shape[2], x.shape[3])
 
         def segsum(x):
             """
@@ -1093,7 +1094,7 @@ class Mamba2Mixer(nn.Module):
         # Add output of intra-chunk and inter-chunk terms (diagonal and off-diagonal blocks)
         y = Y_diag + Y_off
         # [bsz, -1, chunk_size, num_heads, head_dim] -> [bsz, (padded) seq_len, num_heads, head_dim]
-        y = y.view(y.shape[0], -1, y.shape[-2], y.shape[-1])
+        y = y.reshape(y.shape[0], -1, y.shape[-2], y.shape[-1])
 
         # Add D residual to final output
         y = y + D_residual
@@ -1155,7 +1156,7 @@ class Mamba2Mixer(nn.Module):
         if not cached_forward:
             y = self._ssd_naive(
                 # [bsz, seq_len, intermediate_size] -> [bsz, seq_len, num_heads, head_dim]
-                x=x.view(x.shape[0], x.shape[1], -1, self.head_dim),
+                x=x.reshape(x.shape[0], x.shape[1], -1, self.head_dim),
                 dt=dt,
                 A=A,
                 # [bsz, seq_len, state_size] -> [bsz, seq_len, num_groups=1, state_size]
@@ -1177,7 +1178,7 @@ class Mamba2Mixer(nn.Module):
                     cache.ssm_states[self.layer_idx].copy_(last_state)
 
             # [bsz, seq_len, num_heads, head_dim] -> [bsz, seq_len, intermediate_size]
-            y = y.view(y.shape[0], y.shape[1], -1)
+            y = y.reshape(y.shape[0], y.shape[1], -1)
         else:
             # Get time step with softplus and bias
             dt = F.softplus(dt + self.dt_bias.to(dtype=dt.dtype))
@@ -1188,7 +1189,7 @@ class Mamba2Mixer(nn.Module):
 
             # Discretize B and x
             # [bsz, intermediate_size] -> [bsz, num_heads, head_dim]
-            x = x.view(x.shape[0], -1, self.head_dim)
+            x = x.reshape(x.shape[0], -1, self.head_dim)
             dBx = torch.einsum("bh,bn,bhp->bhpn", dt, B, x)
 
             # State calculation
@@ -1203,7 +1204,7 @@ class Mamba2Mixer(nn.Module):
             y = y + self.D.unsqueeze(-1) * x
 
             # [bsz, num_heads, head_dim] -> [bsz, 1, intermediate_size]
-            y = y.view(y.shape[0], -1).unsqueeze(1)
+            y = y.reshape(y.shape[0], -1).unsqueeze(1)
 
         # 4. Gate normalization introduced for instability, see section 7 of the paper
         y = self.norm(y, residual=z)
