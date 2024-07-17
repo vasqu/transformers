@@ -143,7 +143,7 @@ class Mamba2ModelTester:
         return config
 
     def create_and_check_mamba2_model(
-        self, config, input_ids, input_mask, sequence_labels, token_labels, choice_labels
+        self, config, input_ids, input_mask, *args
     ):
         model = Mamba2Model(config=config)
         model.to(torch_device)
@@ -184,7 +184,7 @@ class Mamba2ModelTester:
         result.loss.backward()
 
     def create_and_check_state_equivalency(
-        self, config, input_ids, input_mask, sequence_labels, token_labels, choice_labels
+        self, config, input_ids, input_mask, *args
     ):
         model = Mamba2Model(config=config)
         model.to(torch_device)
@@ -306,6 +306,7 @@ class Mamba2ModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMix
 
     @require_einops
     def test_einops_torch_equivalence(self):
+        # TODO: do we keep this test?
         self.model_tester.create_and_check_einops_torch_equivalence()
 
     def test_initialization(self):
