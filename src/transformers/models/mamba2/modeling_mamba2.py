@@ -1755,8 +1755,8 @@ class Mamba2ForCausalLM(Mamba2PreTrainedModel):
             elif input_ids.shape[1] != cache_position.shape[0]:  # Default case (the "else", a no op, is Exception 2)
                 input_ids = input_ids[:, cache_position]
 
-        # Force cache to be our custom hybrid one, TODO: maybe a warning in the second case?
-        if empty_past_kv or (not empty_past_kv and not isinstance(past_key_values, HybridMamba2AttentionDynamicCache)):
+        # Initialize cache, if necessary
+        if empty_past_kv:
             past_key_values = HybridMamba2AttentionDynamicCache(
                 config=self.config,
                 batch_size=input_ids.shape[0],
@@ -1771,7 +1771,7 @@ class Mamba2ForCausalLM(Mamba2PreTrainedModel):
             if not empty_past_kv:
                 position_ids = position_ids[:, -input_ids.shape[1] :]
 
-        # if `inputs_embeds` are passed, we only want to use them in the 1st generation step
+        # If `inputs_embeds` are passed, we only want to use them in the 1st generation step
         if inputs_embeds is not None and empty_past_kv:
             model_inputs = {"inputs_embeds": inputs_embeds}
         else:

@@ -28,11 +28,11 @@ def convert_ssm_config_to_hf_config(config_ssm: dict) -> Mamba2Config:
 
     # (Optional) Attention related settings
     if len(config_ssm["attn_cfg"]) > 0:
-        hf_config.attention_conv_kernel = config_ssm["attn_cfg"].get(["d_conv"], 0)
+        hf_config.attention_conv_kernel = config_ssm["attn_cfg"].get("d_conv", 0)
         hf_config.attention_head_dim = config_ssm["attn_cfg"]["head_dim"]
-        hf_config.attention_num_heads = config_ssm["attn_cfg"]["num_heads"]
-        hf_config.attention_num_key_value_heads = config_ssm["attn_cfg"].get(
-            ["num_heads_kv"], hf_config.attention_num_heads
+        hf_config.num_attention_heads = config_ssm["attn_cfg"]["num_heads"]
+        hf_config.num_key_value_heads = config_ssm["attn_cfg"].get(
+            "num_heads_kv", hf_config.num_attention_heads
         )
         hf_config.use_attention_out_bias = config_ssm["attn_cfg"]["out_proj_bias"]
         hf_config.use_attention_qkv_bias = config_ssm["attn_cfg"]["qkv_proj_bias"]
@@ -82,6 +82,7 @@ def convert_ssm_to_hf(ssm_dir, output_dir):
         f"state-spaces/mamba-{mamba2_to_mamba1_parameters[original_model_params]}-hf"
     )
 
+    # TODO: make the name more specific
     save_dir = f"{output_dir}/mamba2-{original_model_params}"
     logger.info(f"Saving hf config, model, and tokenizer to {save_dir}")
     makedirs(save_dir, exist_ok=True)
