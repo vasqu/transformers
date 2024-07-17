@@ -1755,13 +1755,13 @@ class Mamba2ForCausalLM(Mamba2PreTrainedModel):
             elif input_ids.shape[1] != cache_position.shape[0]:  # Default case (the "else", a no op, is Exception 2)
                 input_ids = input_ids[:, cache_position]
 
-        # Force cache to be our custom hybrid one, something in the generation module incorrectly overwrites it...
+        # Force cache to be our custom hybrid one, TODO: maybe a warning in the second case?
         if empty_past_kv or (not empty_past_kv and not isinstance(past_key_values, HybridMamba2AttentionDynamicCache)):
             past_key_values = HybridMamba2AttentionDynamicCache(
                 config=self.config,
                 batch_size=input_ids.shape[0],
-                device=input_ids.device,
-                dtype=input_ids.dtype,
+                device=self.device,
+                dtype=self.dtype,
             )
 
         if attention_mask is not None and position_ids is None:
