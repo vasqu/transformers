@@ -218,30 +218,30 @@ class Mamba2ModelTester:
             d.unsqueeze(-1).unsqueeze(-1).expand(d.shape[0], 2, 3).equal(repeat(d, "h -> h p n", p=2, n=3))
         )
 
-        self.parent.assertTrue(v.view(v.shape[0], -1, 2).equal(rearrange(v, "b (h p) -> b h p", p=2)))
+        self.parent.assertTrue(v.reshape(v.shape[0], -1, 2).equal(rearrange(v, "b (h p) -> b h p", p=2)))
         self.parent.assertTrue(v.unsqueeze(-1).unsqueeze(-1).equal(rearrange(v, "b h -> b h 1 1")))
 
         self.parent.assertTrue(
-            w.view(w.shape[0], -1, w.shape[-2], w.shape[-1]).equal(rearrange(w, "b c l h p -> b (c l) h p"))
+            w.reshape(w.shape[0], -1, w.shape[-2], w.shape[-1]).equal(rearrange(w, "b c l h p -> b (c l) h p"))
         )
 
         self.parent.assertTrue(x.transpose(1, 2).equal(rearrange(x, "b l d -> b d l")))
         self.parent.assertTrue(x.unsqueeze(-1).expand(*x.size(), 5).equal(repeat(x, "... d -> ... d e", e=5)))
         self.parent.assertTrue(
-            x.view(x.shape[0], -1, 3, x.shape[2]).equal(rearrange(x, "b (c l) ... -> b c l ...", l=3))
+            x.reshape(x.shape[0], -1, 3, x.shape[2]).equal(rearrange(x, "b (c l) ... -> b c l ...", l=3))
         )
         self.parent.assertTrue(x.unsqueeze(-2).equal(rearrange(x, pattern="b l n -> b l 1 n")))
         self.parent.assertTrue(
-            x.view(x.shape[0], x.shape[1], -1, 2).equal(rearrange(x, pattern="b l (h p) -> b l h p", p=2))
+            x.reshape(x.shape[0], x.shape[1], -1, 2).equal(rearrange(x, pattern="b l (h p) -> b l h p", p=2))
         )
-        self.parent.assertTrue(x.view(x.shape[0], -1).unsqueeze(1).equal((rearrange(x, "b h p -> b 1 (h p)"))))
+        self.parent.assertTrue(x.reshape(x.shape[0], -1).unsqueeze(1).equal((rearrange(x, "b h p -> b 1 (h p)"))))
 
         self.parent.assertTrue(y.permute(0, 3, 1, 2).equal(rearrange(y, "b c l h -> b h c l")))
         self.parent.assertTrue(y.unsqueeze(-1).expand(*y.size(), 5).equal(repeat(y, "... d -> ... d e", e=5)))
         self.parent.assertTrue(
-            y.view(y.shape[0], -1, 3, y.shape[2], y.shape[3]).equal(rearrange(y, "b (c l) ... -> b c l ...", l=3))
+            y.reshape(y.shape[0], -1, 3, y.shape[2], y.shape[3]).equal(rearrange(y, "b (c l) ... -> b c l ...", l=3))
         )
-        self.parent.assertTrue(y.view(y.shape[0], y.shape[1], -1).equal(rearrange(y, "b l h p -> b l (h p)")))
+        self.parent.assertTrue(y.reshape(y.shape[0], y.shape[1], -1).equal(rearrange(y, "b l h p -> b l (h p)")))
 
         self.parent.assertTrue(z.squeeze(1).equal(rearrange(z, "d 1 w -> d w")))
         self.parent.assertTrue(
