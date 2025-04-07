@@ -34,7 +34,11 @@ from ..utils import is_torch_flex_attn_available
 
 
 if is_torch_flex_attn_available():
-    from torch.nn.attention.flex_attention import BlockMask, flex_attention
+    from torch.nn.attention.flex_attention import (
+        BlockMask,
+        flex_attention,
+        _DEFAULT_SPARSE_BLOCK_SIZE as default_block_size
+    )
     from torch.nn.attention.flex_attention import (
         create_block_mask as create_block_causal_mask_flex,
     )
@@ -105,7 +109,8 @@ def make_flex_block_causal_mask(
         key_length = total_seq_len
     if not query_length:
         query_length = total_seq_len
-    attention_mask_2d = torch.nn.functional.pad(attention_mask_2d, value=0, pad=(0, key_length))
+    # TODO i assume padding was meant to be to a value not + a value; also smaller values will fail -> def block size
+    attention_mask_2d = torch.nn.functional.pad(attention_mask_2d, value=0, pad=(0, abs(total_seq_len - max(key_length, default_block_size))))
     device = attention_mask_2d.device
     document_ids = attention_mask_2d.clone()
 
@@ -126,7 +131,7 @@ def make_flex_block_causal_mask(
         See :func:`~torchtune.modules.attention_utils.create_block_causal_mask`
         for an illustration.
         """
-        causal_mask = q_idx >= kv_idx  # not valid when decoding
+        causal_mask = q_idx >= kv_idx  # not valid when decoding TODO should be when offsets are correct
         document_mask = document_ids[batch_idx, q_idx] == document_ids[batch_idx, kv_idx]
         padding_mask = attention_mask_2d[batch_idx, q_idx] > 0
         final_mask = causal_mask & padding_mask & document_mask
@@ -142,6 +147,7 @@ def make_flex_block_causal_mask(
             return causal_mask_mod(batch_idx, head_idx, offset_q, offset_kv)
     else:
         mask_mod = causal_mask_mod
+
     return create_block_causal_mask_flex(
         mask_mod=mask_mod,
         B=batch_size,
@@ -149,7 +155,8 @@ def make_flex_block_causal_mask(
         Q_LEN=query_length,
         KV_LEN=key_length,
         device=device,
-        _compile=True,
+        # TODO compiling is not BC with prev versions
+        _compile=False,
     )
 
 

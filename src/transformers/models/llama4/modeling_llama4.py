@@ -431,6 +431,10 @@ class Llama4TextDecoderLayer(nn.Module):
         if self.use_chunked_attention and chunk_causal_mask is not None:
             attention_mask = chunk_causal_mask
 
+            print("Using chunked attention")
+            print(attention_mask.shape)
+            print()
+
         # Self Attention
         attention_states, self_attn_weights = self.self_attn(
             hidden_states=hidden_states,
@@ -771,18 +775,31 @@ class Llama4TextModel(Llama4PreTrainedModel):
         else:
             target_length = attention_mask.shape[-1] if attention_mask is not None else sequence_length
 
+        print(target_length)
+        print(sequence_length)
+        print()
+
         if self.config._attn_implementation == "flex_attention":
             if isinstance(attention_mask, torch.Tensor):
-                offsets = (first_cache_position, max(last_cache_position - key_length, 0))
-                chunked_attention_mask = make_flex_block_causal_mask(
-                    attention_mask, self.config.attention_chunk_size, sequence_length, key_length, offsets=offsets
-                )
+
+                debug = True
+                if debug or target_length > attention_chunk_size:
+                    offsets = (first_cache_position, max(last_cache_position - key_length, 0))
+                    chunked_attention_mask = make_flex_block_causal_mask(
+                        attention_mask,
+                        attention_chunk_size=attention_chunk_size,
+                        query_length=sequence_length,
+                        key_length=key_length,
+                        offsets=offsets,
+                    )
+
                 attention_mask = make_flex_block_causal_mask(
                     attention_mask,
                     query_length=sequence_length,
-                    key_length=past_key_values.get_max_cache_shape(),
+                    key_length=target_length,
                     offsets=None if sequence_length != 1 else (first_cache_position, 0),
                 )
+
                 return attention_mask, chunked_attention_mask
             if isinstance(attention_mask, BlockMask):
                 return attention_mask, chunked_attention_mask
@@ -805,6 +822,7 @@ class Llama4TextModel(Llama4PreTrainedModel):
                 end=first_cache_position + key_length,
                 device=device,
             )
+            # TODO shape mismatches
             chunked_attention_mask = chunked_attention_mask & attention_mask
             if sequence_length == 1:
                 chunked_attention_mask = chunked_attention_mask[-1:]
