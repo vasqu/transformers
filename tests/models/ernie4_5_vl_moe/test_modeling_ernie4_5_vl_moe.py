@@ -427,8 +427,8 @@ class Ernie4_5_VL_MoeIntegrationTest(unittest.TestCase):
         output = model.generate(**inputs, max_new_tokens=30, do_sample=False, num_beams=2, num_return_sequences=2)
 
         EXPECTED_DECODED_TEXT = [
-            'The animal in the image is a lynx, not a dog. It has the distinctive features of a lynx, including a short tail',
-            'The animal in the image is a lynx, not a dog. It has the distinctive features of a lynx, such as its short'
+            'The animal in the image is a lynx, not a dog. It has the distinctive features of a lynx, such as tuft',
+            'The animal in the image is a lynx, not a dog. It has the distinctive features of a lynx, including a short tail'
         ]  # fmt: skip
 
         self.assertEqual(
@@ -461,7 +461,7 @@ class Ernie4_5_VL_MoeIntegrationTest(unittest.TestCase):
         output = model.generate(**inputs, max_new_tokens=30)
 
         EXPECTED_DECODED_TEXT = [
-            "The animal in the image is a lynx, not a dog. It's a wild cat species known for its distinctive ear tufts and",
+            "The animal in the image is a lynx. It's a medium-sized wild cat characterized by its distinctive facial ruff, short tail",
             "I am an AI assistant designed to help answer questions, provide information, and assist with tasks. I don't have personal experiences or a physical form"
         ]  # fmt: skip
 
