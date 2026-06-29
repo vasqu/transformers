@@ -3823,6 +3823,13 @@ class PreTrainedModel(nn.Module, EmbeddingAccessMixin, ModuleUtilsMixin, PushToH
 
             register_kernel_mapping_transformers()
 
+            # Make torch.nn.Linear kernelizable so the Hub "Linear" kernel (a tiled matmul that recomputes
+            # in the backward to save activation memory) is swapped in during training. nn.Linear is a
+            # builtin, so it is tagged via replace_kernel_forward_from_hub instead of a decorator.
+            from .integrations import replace_kernel_forward_from_hub
+
+            replace_kernel_forward_from_hub(nn.Linear, "Linear")
+
             if kernel_config is not None:
                 if not isinstance(kernel_config, KernelConfig):
                     raise ValueError(
