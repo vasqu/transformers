@@ -4714,9 +4714,10 @@ class PreTrainedModel(nn.Module, EmbeddingAccessMixin, ModuleUtilsMixin, PushToH
             else:
                 kernelize(self, device=Device(type=self.device.type), mode=mode)
 
-            # A linear nested inside an already-kernelized non-Linear layer (e.g. a tiled MLP) would be
-            # tiled twice, since kernelize swaps both. The parent kernel already covers those linears, so
-            # restore their original forward; this also keeps PEFT adapters and hooks on them working.
+            # `kernelize` recurses into submodules, so a linear nested inside an already-kernelized
+            # non-Linear layer (e.g. a tiled MLP) gets kernelized too and is then computed twice, once by
+            # the parent kernel and once on its own. Restore the child's original forward; this also keeps
+            # PEFT adapters and hooks on it working.
             for _, parent in self.named_modules():
                 if getattr(type(parent), "kernel_layer_name", None) in (None, "Linear"):
                     continue
