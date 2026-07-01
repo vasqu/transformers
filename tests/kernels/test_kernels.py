@@ -184,6 +184,24 @@ class TestHubKernels(TestCasePlus):
         self.assert_kernelized_forward_is_the_same(model, self.model_kernelized)
         del model
 
+    def _assert_mlp_linears_match_baseline(self, model):
+        baseline = dict(self.model_not_kernelized.named_modules())
+        nested = [(n, m) for n, m in model.named_modules() if n.endswith((".gate_proj", ".up_proj", ".down_proj"))]
+        self.assertTrue(nested)
+        for name, module in nested:
+            self.assertEqual(module.forward.__code__, baseline[name].forward.__code__)
+
+    def test_nested_mlp_linears_are_not_double_kernelized(self):
+        # nn.Linear is tagged "Linear", so the linears inside an already-kernelized SwiGLU MLP would be
+        # computed twice; they must run the plain nn.Linear forward, before and after a mode switch.
+        model = copy.deepcopy(self.model_not_kernelized)
+        model.use_kernels = True
+        self._assert_mlp_linears_match_baseline(model)
+        model.train()
+        model.eval()
+        self._assert_mlp_linears_match_baseline(model)
+        del model
+
     def test_unkernelize(self):
         model = copy.deepcopy(self.model_kernelized)
 

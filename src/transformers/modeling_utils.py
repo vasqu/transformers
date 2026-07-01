@@ -3823,6 +3823,13 @@ class PreTrainedModel(nn.Module, EmbeddingAccessMixin, ModuleUtilsMixin, PushToH
 
             register_kernel_mapping_transformers()
 
+            # Make torch.nn.Linear kernelizable so the Hub "Linear" kernel (a tiled matmul that recomputes
+            # in the backward to save activation memory) is swapped in during training. nn.Linear is a
+            # builtin, so it is tagged via replace_kernel_forward_from_hub instead of a decorator.
+            from .integrations import replace_kernel_forward_from_hub
+
+            replace_kernel_forward_from_hub(nn.Linear, "Linear")
+
             if kernel_config is not None:
                 if not isinstance(kernel_config, KernelConfig):
                     raise ValueError(
@@ -4706,6 +4713,19 @@ class PreTrainedModel(nn.Module, EmbeddingAccessMixin, ModuleUtilsMixin, PushToH
                     kernelize(self, device=Device(type=self.device.type), mode=mode)
             else:
                 kernelize(self, device=Device(type=self.device.type), mode=mode)
+
+            # `kernelize` recurses into submodules, so a linear nested inside an already-kernelized
+            # non-Linear layer (e.g. a tiled MLP) gets kernelized too and is then computed twice, once by
+            # the parent kernel and once on its own. Restore the child's original forward; this also keeps
+            # PEFT adapters and hooks on it working.
+            for _, parent in self.named_modules():
+                if getattr(type(parent), "kernel_layer_name", None) in (None, "Linear"):
+                    continue
+                for child in parent.modules():
+                    if child is parent or getattr(type(child), "kernel_layer_name", None) != "Linear":
+                        continue
+                    if "forward" in vars(child):
+                        del child.forward
 
             self._use_kernels = True
 
