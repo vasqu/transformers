@@ -649,7 +649,7 @@ if is_kernels_available():
                 },
                 "rocm": {
                     Mode.INFERENCE | Mode.TORCH_COMPILE: LayerRepository(
-                        repo_id="kernels-community/aiter-rope", layer_name="apply_rotary_transformers", version=3
+                        repo_id="amd/aiter-rope", layer_name="apply_rotary_transformers", version=3
                     )
                 },
             },
