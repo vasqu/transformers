@@ -146,7 +146,12 @@ if is_kernels_available():
                     repo_id="kernels-staging/deformable-detr",
                     layer_name="MultiScaleDeformableAttention",
                     revision="pr-1234",
-                )
+                ),
+                "rocm": LayerRepository(
+                    repo_id="kernels-staging/deformable-detr",
+                    layer_name="MultiScaleDeformableAttention",
+                    revision="pr-1234",
+                ),
             },
             # GB10/SM121 GDN fast path (no fla/causal_conv1d build there); dense and MoE share it.
             "Qwen3_5GatedDeltaNet": {
