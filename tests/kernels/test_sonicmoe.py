@@ -78,6 +78,7 @@ class SonicMoeLoaderTest(unittest.TestCase):
     ):
         stack = contextlib.ExitStack()
         stack.enter_context(mock.patch.object(sm, "is_kernels_available", return_value=kernels_available))
+        stack.enter_context(mock.patch.object(sm, "is_rocm_platform", return_value=False))
         # Fake a "CUDA + `capability`" environment for `is_sonicmoe_loadable` *only* (scoped to its call
         # stack): its arch gate passes while torch.compile / inductor still see the real device — so the
         # compile-safety test runs under the default (inductor) backend on any host, not just SM90+. The
