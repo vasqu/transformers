@@ -316,7 +316,7 @@ class GraniteSWAPreTrainedModel(PreTrainedModel):
     _compatible_flash_implementations = [
         "kernels-community/vllm-flash-attn3",
         "flash_attention_4",
-        "kernels-community/aiter-flash-attn",
+        "amd/aiter-flash-attn",
     ]
 
     @torch.no_grad()

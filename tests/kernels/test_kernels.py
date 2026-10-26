@@ -111,7 +111,7 @@ class TestHubKernels(MemoryCleanupTestCase):
     @require_rocm
     def test_rocm_rotary_kernel_forward_matches_baseline(self):
         """
-        Regression test for the ROCm `rotary_pos_emb` function kernel (`kernels-community/aiter-rope`).
+        Regression test for the ROCm `rotary_pos_emb` function kernel (`amd/aiter-rope`).
 
         On ROCm, `use_kernels=True` dispatches `apply_rotary_pos_emb` to the `aiter-rope` shim. A stale shim
         (e.g. the dropped `position_ids` signature mismatch fixed in

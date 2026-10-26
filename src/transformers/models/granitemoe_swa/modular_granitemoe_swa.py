@@ -134,7 +134,7 @@ class GraniteMoeSWAPreTrainedModel(GraniteMoeSharedPreTrainedModel):
     _compatible_flash_implementations = [
         "kernels-community/vllm-flash-attn3",
         "flash_attention_4",
-        "kernels-community/aiter-flash-attn",
+        "amd/aiter-flash-attn",
     ]
     _can_record_outputs = {
         "router_logits": OutputRecorder(GraniteMoeSWATopKRouter, index=0),

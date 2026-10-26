@@ -49,7 +49,7 @@ PyTorch.
 | MLP (SwiGLU, GeGLU) | `kernels-community/liger-kernels` | — | — |
 | Linear | `kernels-community/liger-kernels` | — | — |
 | Activations (GELU variants, SiLU) | `kernels-community/activation` | — | — |
-| Rotary embeddings | `kernels-community/rotary` | `kernels-community/aiter-rope` | `kernels-community/rotary` |
+| Rotary embeddings | `kernels-community/rotary` | `amd/aiter-rope` | `kernels-community/rotary` |
 | Causal LM loss | `kernels-community/liger-kernels` | — | — |
 | Deformable attention | `kernels-community/deformable-detr` | — | — |
 
@@ -57,7 +57,7 @@ The table is not exhaustive. Models can register additional layers and functions
 for specific execution modes.
 
 > [!NOTE]
-> AMD GPUs report their device type as `cuda` in PyTorch. Transformers detects ROCm at runtime and routes supported operations to the AMD kernels above, including [AITER](https://github.com/ROCm/aiter) builds such as `kernels-community/aiter-rope`. You don't need to set the device type yourself.
+> AMD GPUs report their device type as `cuda` in PyTorch. Transformers detects ROCm at runtime and routes supported operations to the AMD kernels above, including [AITER](https://github.com/ROCm/aiter) builds such as `amd/aiter-rope`. You don't need to set the device type yourself.
 
 Browse available kernels in the [kernels-community](https://huggingface.co/kernels-community) organization.
 

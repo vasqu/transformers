@@ -92,8 +92,8 @@ Set the attention backend with `attn_implementation` when you load a model, and 
 | `attn_implementation` | Requires | Notes |
 |---|---|---|
 | `"sdpa"` | – | Default. |
-| `"flash_attention_2"` | [flash-attn](https://github.com/Dao-AILab/flash-attention#amd-rocm-support) built for ROCm, or [kernels](https://github.com/huggingface/kernels) | Uses the `flash-attn` package when it is installed. Its default Composable Kernel (CK) backend supports MI200, MI300, MI355, and RDNA 3/4 GPUs, and the [Docker image](#installation) includes it on MI300 or MI350. Otherwise, loads [kernels-community/aiter-flash-attn](https://huggingface.co/kernels-community/aiter-flash-attn) from the Hub. |
-| `"flash_attention_3"` | [kernels](https://github.com/huggingface/kernels) | Loads [kernels-community/aiter-flash-attn](https://huggingface.co/kernels-community/aiter-flash-attn), a prebuilt [AITER](https://github.com/ROCm/aiter) FlashAttention kernel. No compilation required. |
+| `"flash_attention_2"` | [flash-attn](https://github.com/Dao-AILab/flash-attention#amd-rocm-support) built for ROCm, or [kernels](https://github.com/huggingface/kernels) | Uses the `flash-attn` package when it is installed. Its default Composable Kernel (CK) backend supports MI200, MI300, MI355, and RDNA 3/4 GPUs, and the [Docker image](#installation) includes it on MI300 or MI350. Otherwise, loads [amd/aiter-flash-attn](https://huggingface.co/kernels/amd/aiter-flash-attn) from the Hub. |
+| `"flash_attention_3"` | [kernels](https://github.com/huggingface/kernels) | Loads [amd/aiter-flash-attn](https://huggingface.co/kernels/amd/aiter-flash-attn), a prebuilt [AITER](https://github.com/ROCm/aiter) FlashAttention kernel. No compilation required. |
 
 ```py
 from transformers import AutoModelForCausalLM
@@ -109,14 +109,14 @@ model = AutoModelForCausalLM.from_pretrained(
 On ROCm, `flash_attention_3` resolves to the AITER kernel and logs the following. The message refers to the FlashAttention-3 package, so it appears even when `flash_attention_2` is installed.
 
 ```txt
-You do not have `flash_attn` installed, using `kernels-community/aiter-flash-attn` from the `kernels` library instead!
+You do not have `flash_attn` installed, using `amd/aiter-flash-attn` from the `kernels` library instead!
 ```
 
-You can also pass the kernel repository directly with `attn_implementation="kernels-community/aiter-flash-attn"`. See [Attention backends](./attention_interface) for how backends are selected.
+You can also pass the kernel repository directly with `attn_implementation="amd/aiter-flash-attn"`. See [Attention backends](./attention_interface) for how backends are selected.
 
 ## Use Hub kernels
 
-Set `use_kernels=True` in [`~PreTrainedModel.from_pretrained`] to replace supported layers with optimized kernels from the Hub. Transformers detects ROCm and picks the AMD build for each layer, such as `kernels-community/aiter-rope` for rotary embeddings and `kernels-community/liger-kernels` for RMSNorm. When you write a custom [`KernelConfig`], use `"rocm"` as the device key for AMD-specific mappings.
+Set `use_kernels=True` in [`~PreTrainedModel.from_pretrained`] to replace supported layers with optimized kernels from the Hub. Transformers detects ROCm and picks the AMD build for each layer, such as `amd/aiter-rope` for rotary embeddings and `kernels-community/liger-kernels` for RMSNorm. When you write a custom [`KernelConfig`], use `"rocm"` as the device key for AMD-specific mappings.
 
 ```py
 from transformers import AutoModelForCausalLM

@@ -400,7 +400,7 @@ class OpenAIPrivacyFilterPreTrainedModel(PreTrainedModel):
         "kernels-community/vllm-flash-attn3",
         "flash_attention_4",
         "kernels-community/metal-flash-sdpa",
-        "kernels-community/aiter-flash-attn",
+        "amd/aiter-flash-attn",
     ]
     _keep_in_fp32_modules_strict = ["sinks"]
 
