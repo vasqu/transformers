@@ -49,7 +49,7 @@ from transformers.testing_utils import (
     slow,
     torch_device,
 )
-from transformers.utils.import_utils import is_kernels_available
+from transformers.utils.import_utils import is_kernels_available, is_rocm_platform
 from transformers.utils.kernel_config import add_to_mapping_local
 
 
@@ -111,7 +111,7 @@ class TestHubKernels(MemoryCleanupTestCase):
     @require_rocm
     def test_rocm_rotary_kernel_forward_matches_baseline(self):
         """
-        Regression test for the ROCm `rotary_pos_emb` function kernel (`kernels-community/aiter-rope`).
+        Regression test for the ROCm `rotary_pos_emb` function kernel (`amd/aiter-rope`).
 
         On ROCm, `use_kernels=True` dispatches `apply_rotary_pos_emb` to the `aiter-rope` shim. A stale shim
         (e.g. the dropped `position_ids` signature mismatch fixed in
@@ -743,6 +743,8 @@ class TestAttentionKernelRegistration(TestCasePlus):
         model = LlamaModel(copy.deepcopy(config))
         untrusted_kernel = "untrusted/flash_attention_2"
         trusted_kernel = "kernels-staging/flash-attn2@0bcc9e734c6c5ed8619807c217ca977930a18fc1"
+        if is_rocm_platform():
+            trusted_kernel = "amd/aiter-flash-attn"
 
         with tempfile.TemporaryDirectory() as tmpdirname:
             model.save_pretrained(tmpdirname)
@@ -940,9 +942,10 @@ class TestKernelMappingDeviceFiltering(TestCasePlus):
         self.assertIn("RMSNorm", result_mapping, "RMSNorm should be in mapping")
         backends = list(result_mapping["RMSNorm"].keys())
 
-        # Assert only CUDA is present, not ROCm
-        self.assertIn("cuda", backends, "CUDA backend should be registered")
-        self.assertNotIn("rocm", backends, "ROCm backend should NOT be registered on CUDA device")
+        # Assert only the current device is present (AMD GPUs are reported as rocm)
+        current, other = ("rocm", "cuda") if is_rocm_platform() else ("cuda", "rocm")
+        self.assertIn(current, backends)
+        self.assertNotIn(other, backends)
 
     def test_single_device_mapping_still_works(self):
         """

@@ -65,12 +65,12 @@ def is_flash_attn_available(kernels_fallback_ok=False):
 FLASH_ATTN_KERNEL_FALLBACK = {
     # "flash_attention_2": "kernels-community/flash-attn2",
     "flash_attention_2": (
-        "kernels-community/aiter-flash-attn"
+        "amd/aiter-flash-attn"
         if is_rocm_platform()
         else "kernels-staging/flash-attn2@0bcc9e734c6c5ed8619807c217ca977930a18fc1"
     ),
     "flash_attention_3": (
-        "kernels-community/aiter-flash-attn" if is_rocm_platform() else "kernels-community/vllm-flash-attn3"
+        "amd/aiter-flash-attn" if is_rocm_platform() else "kernels-community/vllm-flash-attn3"
     ),
     "flash_attention_4": "kernels-community/flash-attn4",
 }
@@ -79,7 +79,7 @@ FLASH_ATTN_KERNEL_VERSIONS = {
     "kernels-community/flash-attn2": 4,
     "kernels-community/flash-attn3": 2,
     "kernels-community/vllm-flash-attn3": 1,
-    "kernels-community/aiter-flash-attn": 2,
+    "amd/aiter-flash-attn": 2,
     "kernels-community/flash-attn4": 1,
     "kernels-community/metal-flash-sdpa": 2,
 }
@@ -89,7 +89,7 @@ FLASH_ATTN_KERNEL_DEVICES = {
     "kernels-community/flash-attn2": ("cuda", "xpu"),
     "kernels-community/flash-attn3": ("cuda",),
     "kernels-community/vllm-flash-attn3": ("cuda",),
-    "kernels-community/aiter-flash-attn": ("rocm",),
+    "amd/aiter-flash-attn": ("rocm",),
     "kernels-community/flash-attn4": ("cuda",),
     "kernels-community/metal-flash-sdpa": ("mps",),
 }

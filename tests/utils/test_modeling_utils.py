@@ -3286,6 +3286,10 @@ class TestAttentionImplementation(unittest.TestCase):
         stripped_map = {
             k: v for k, v in PACKAGE_DISTRIBUTION_MAPPING.items() if k not in ("flash_attn", "flash_attn_interface")
         }
+        # The checks are cached, so drop results computed from the real mapping
+        for check in (is_flash_attn_2_available, is_flash_attn_3_available, is_flash_attn_4_available):
+            check.cache_clear()
+            self.addCleanup(check.cache_clear)
         with patch("transformers.utils.import_utils.PACKAGE_DISTRIBUTION_MAPPING", stripped_map):
             with patch("transformers.modeling_flash_attention_utils.PACKAGE_DISTRIBUTION_MAPPING", stripped_map):
                 self.assertFalse(is_flash_attn_2_available())
@@ -3460,14 +3464,14 @@ class TestAttentionImplementation(unittest.TestCase):
     @require_rocm
     def test_flash_fallback_skips_implementations_not_built_for_the_device(self):
         # The CUDA-only kernel comes first, so the fallback must skip it and pick the ROCm one
-        compatible_flash_implementations = ["kernels-community/vllm-flash-attn3", "kernels-community/aiter-flash-attn"]
+        compatible_flash_implementations = ["kernels-community/vllm-flash-attn3", "amd/aiter-flash-attn"]
         with patch.object(MistralForCausalLM, "_compatible_flash_implementations", compatible_flash_implementations):
             model = MistralForCausalLM.from_pretrained(TINY_MISTRAL, attn_implementation="flash_attention_2")
-            self.assertEqual(model.config._attn_implementation, "kernels-community/aiter-flash-attn")
+            self.assertEqual(model.config._attn_implementation, "amd/aiter-flash-attn")
 
             model.set_attn_implementation("eager")
             model.set_attn_implementation("flash_attention_2")
-            self.assertEqual(model.config._attn_implementation, "kernels-community/aiter-flash-attn")
+            self.assertEqual(model.config._attn_implementation, "amd/aiter-flash-attn")
 
     @require_kernels
     @require_rocm
@@ -3475,14 +3479,14 @@ class TestAttentionImplementation(unittest.TestCase):
         # `kernels-community/flash-attn2` has no ROCm build, so FA2 must fall back to the AITER kernel instead
         from transformers.modeling_flash_attention_utils import FLASH_ATTENTION_COMPATIBILITY_MATRIX
 
-        self.assertEqual(FLASH_ATTN_KERNEL_FALLBACK["flash_attention_2"], "kernels-community/aiter-flash-attn")
+        self.assertEqual(FLASH_ATTN_KERNEL_FALLBACK["flash_attention_2"], "amd/aiter-flash-attn")
 
         # Hide the `flash-attn` package (installed in the AMD CI image) so that the kernel fallback is used
         with patch.dict(FLASH_ATTENTION_COMPATIBILITY_MATRIX[2], {"general_availability_check": lambda: False}):
             model = MistralForCausalLM.from_pretrained(
                 TINY_MISTRAL, attn_implementation="flash_attention_2", dtype=torch.bfloat16
             ).to(torch_device)
-        self.assertEqual(model.config._attn_implementation, "kernels-community/aiter-flash-attn")
+        self.assertEqual(model.config._attn_implementation, "amd/aiter-flash-attn")
 
         input_ids = torch.randint(0, model.config.vocab_size, (2, 16), device=torch_device)
         with torch.no_grad():

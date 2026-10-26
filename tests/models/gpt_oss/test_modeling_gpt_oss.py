@@ -172,7 +172,7 @@ class GptOssModelTest(CausalLMModelTest, unittest.TestCase):
 RESULTS_PATH = Path(__file__).parent.parent.parent / "fixtures/gpt_oss/integration_tests.json"
 
 # FA3-style attention kernel — uses the AITER backend on ROCm (no vllm-flash-attn3 build there).
-_FA3_KERNEL = "kernels-community/aiter-flash-attn" if is_rocm_platform() else "kernels-community/vllm-flash-attn3"
+_FA3_KERNEL = "amd/aiter-flash-attn" if is_rocm_platform() else "kernels-community/vllm-flash-attn3"
 
 
 # ------------------------
