@@ -3286,6 +3286,10 @@ class TestAttentionImplementation(unittest.TestCase):
         stripped_map = {
             k: v for k, v in PACKAGE_DISTRIBUTION_MAPPING.items() if k not in ("flash_attn", "flash_attn_interface")
         }
+        # The checks are cached, so drop results computed from the real mapping
+        for check in (is_flash_attn_2_available, is_flash_attn_3_available, is_flash_attn_4_available):
+            check.cache_clear()
+            self.addCleanup(check.cache_clear)
         with patch("transformers.utils.import_utils.PACKAGE_DISTRIBUTION_MAPPING", stripped_map):
             with patch("transformers.modeling_flash_attention_utils.PACKAGE_DISTRIBUTION_MAPPING", stripped_map):
                 self.assertFalse(is_flash_attn_2_available())
